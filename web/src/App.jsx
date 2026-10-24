@@ -153,7 +153,17 @@ export default function App() {
       // but the UI state was stale, overwriting the salt would make the on-chain
       // commitment unrevealable and forfeit the stake permanently.
       const existing = loadSalt(id.toString(), boat.id)
-      if (existing) throw new Error(`${boat.label} already committed this epoch`)
+      if (existing) {
+        // Stale entry guard: if the chain says not committed (e.g. Anvil restarted
+        // and redeployed with the same epochId), clear it and proceed.
+        const onChain = await publicClient.readContract({
+          address: contractAddress,
+          abi: gridSignalAbi,
+          functionName: 'getResponderState',
+          args: [id, boat.account.address],
+        })
+        if (onChain[0]) throw new Error(`${boat.label} already committed this epoch`)
+      }
 
       const salt = randomSalt()
       // Stored before sending: a lost receipt must not lose the salt, or the
