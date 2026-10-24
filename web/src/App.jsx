@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { encodePacked, formatEther, keccak256, toHex } from 'viem'
+import { encodePacked, formatEther, keccak256, parseEther, toHex } from 'viem'
 import {
   BOATS,
   GRID_SIZE,
@@ -189,6 +189,28 @@ export default function App() {
       }),
     )
 
+  const onCreateEpoch = () =>
+    run('operator', 'Create epoch', async () => {
+      // Same gradient as the deploy script: hot center, medium ring, low outer ring.
+      const u = parseEther('1')
+      const half = u / 2n
+      const bounties = [
+        half,   half,   u,    half,   half,
+        half,   u*3n/2n, u*2n, u*3n/2n, half,
+        u,      u*2n,   u*5n, u*2n,   u,
+        half,   u*3n/2n, u*2n, u*3n/2n, half,
+        half,   half,   u,    half,   half,
+      ]
+      const total = bounties.reduce((a, b) => a + b, 0n)
+      return operatorWallet.client.writeContract({
+        address: contractAddress,
+        abi: gridSignalAbi,
+        functionName: 'createEpoch',
+        args: [bounties, 3600n, 3600n, 3600n],
+        value: total,
+      })
+    })
+
   const onAdvance = () =>
     run('operator', 'Advance phase', () =>
       operatorWallet.client.writeContract({
@@ -200,6 +222,8 @@ export default function App() {
     )
 
   const revealed = BOATS.filter((b) => boatState[b.id]?.revealed)
+  const allClaimedOrNoneRevealed =
+    revealed.length === 0 || revealed.every((b) => boatState[b.id]?.claimed)
 
   return (
     <div className="min-h-screen p-6 max-w-5xl mx-auto">
@@ -211,6 +235,16 @@ export default function App() {
           {stake === null ? '…' : `${formatEther(stake)} ETH`}
         </p>
       </header>
+
+      {(phase === PHASE.None || phase === PHASE.Closed) && (
+        <button
+          onClick={onCreateEpoch}
+          disabled={!!busy.operator}
+          className="mb-6 w-full rounded bg-green-600 px-4 py-3 text-lg font-semibold disabled:bg-slate-700 disabled:text-slate-500"
+        >
+          Create Epoch (Operator)
+        </button>
+      )}
 
       <div className="grid grid-cols-5 gap-2 mb-6">
         {Array.from({ length: GRID_SIZE }, (_, i) => {
@@ -288,10 +322,20 @@ export default function App() {
 
       <button
         onClick={onAdvance}
-        disabled={!!busy.operator || phase === PHASE.None || phase === PHASE.Closed}
+        disabled={
+          !!busy.operator ||
+          phase === PHASE.None ||
+          phase === PHASE.Closed ||
+          (phase === PHASE.Claim && !allClaimedOrNoneRevealed)
+        }
+        title={
+          phase === PHASE.Claim && !allClaimedOrNoneRevealed
+            ? 'All revealed boats must claim before closing'
+            : undefined
+        }
         className="mb-6 w-full rounded bg-amber-600 px-4 py-3 text-lg font-semibold disabled:bg-slate-700 disabled:text-slate-500"
       >
-        Advance Phase
+        Advance Phase{phase === PHASE.Claim && !allClaimedOrNoneRevealed ? ' (waiting for claims)' : ''}
       </button>
 
       <div className="rounded border border-slate-700 bg-slate-900 p-4 text-sm">

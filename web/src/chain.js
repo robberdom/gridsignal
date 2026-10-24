@@ -13,6 +13,7 @@ export const gridSignalAbi = parseAbi([
   'function advancePhaseForDemo(uint256 epochId) returns (uint8)',
   'function getEpochGridState(uint256 epochId) view returns (uint256[25] bounties, uint32[25] counts, uint8 phase)',
   'function getResponderState(uint256 epochId, address responder) view returns (bool committed, bool revealed, bool claimed, uint8 sector, uint256 pendingPayout)',
+  'function createEpoch(uint256[25] bounties, uint64 commitDuration, uint64 revealDuration, uint64 claimDuration) payable returns (uint256)',
 ])
 
 export const PHASE_LABELS = ['Not created', 'Commit', 'Reveal', 'Claim', 'Closed']
