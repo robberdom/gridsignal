@@ -16,6 +16,8 @@ export const gridSignalAbi = parseAbi([
   'function createEpoch(uint256[25] bounties, uint64 commitDuration, uint64 revealDuration, uint64 claimDuration) payable returns (uint256)',
 ])
 
+export const PHASE_LABELS = ['Not created', 'Commit', 'Reveal', 'Claim', 'Closed']
+
 export const contractAddress = '0x5cBcFE5eA980585270eAB78eDf4Be1a6eeffE946'
 const rpcUrl = 'https://sepolia.drpc.org'
 const chainId = 11155111
@@ -34,7 +36,6 @@ function wallet(key) {
   return { account, client: createWalletClient({ account, chain, transport: http(rpcUrl) }) }
 }
 
-// Hardcoded Anvil burner keys so Vercel works instantly without configuration
 export const BOATS = [
   { id: 'A', label: 'Boat A', ...wallet('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80') },
   { id: 'B', label: 'Boat B', ...wallet('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d') },
