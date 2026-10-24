@@ -56,7 +56,8 @@ export default function App() {
   const [bounties, setBounties] = useState(Array(GRID_SIZE).fill(0n))
   const [counts, setCounts] = useState(Array(GRID_SIZE).fill(0))
   const [stake, setStake] = useState(null)
-  const [selected, setSelected] = useState(12)
+  // Per-boat sector selection so each can target a different sector independently.
+  const [selected, setSelected] = useState(() => Object.fromEntries(BOATS.map((b) => [b.id, 12])))
   const [boatState, setBoatState] = useState({})
   const [busy, setBusy] = useState({})
   const [message, setMessage] = useState('')
@@ -139,7 +140,7 @@ export default function App() {
   )
 
   const onCommit = (boat) =>
-    run(boat.id, `${boat.label} commit S${selected}`, async () => {
+    run(boat.id, `${boat.label} commit S${selected[boat.id]}`, async () => {
       // Read epochId fresh to avoid a stale-state mismatch: the contract binds
       // the commitment to currentEpochId at call time, not the React state copy.
       const id = await publicClient.readContract({
@@ -157,12 +158,12 @@ export default function App() {
       const salt = randomSalt()
       // Stored before sending: a lost receipt must not lose the salt, or the
       // stake can never be revealed and is forfeit.
-      saveSalt(id.toString(), boat.id, { epochId: id.toString(), sector: selected, salt })
+      saveSalt(id.toString(), boat.id, { epochId: id.toString(), sector: selected[boat.id], salt })
       return boat.client.writeContract({
         address: contractAddress,
         abi: gridSignalAbi,
         functionName: 'commit',
-        args: [commitmentFor(boat.account.address, id, selected, salt)],
+        args: [commitmentFor(boat.account.address, id, selected[boat.id], salt)],
         value: stake,
       })
     })
@@ -258,9 +259,16 @@ export default function App() {
           return (
             <button
               key={i}
-              onClick={() => setSelected(i)}
+              onClick={() => {
+                // Clicking a grid cell sets all uncommitted boats to that sector.
+                setSelected((prev) => {
+                  const next = { ...prev }
+                  BOATS.forEach((b) => { if (!boatState[b.id]?.committed) next[b.id] = i })
+                  return next
+                })
+              }}
               className={`rounded border p-3 text-left transition ${
-                selected === i
+                BOATS.some((b) => !boatState[b.id]?.committed && selected[b.id] === i)
                   ? 'border-sky-400 bg-sky-950'
                   : 'border-slate-700 bg-slate-900 hover:border-slate-500'
               }`}
@@ -279,21 +287,32 @@ export default function App() {
       </div>
 
       <div className="mb-6 space-y-2">
-        <p className="text-sm text-slate-400">
-          Selected sector: <span className="text-slate-100 font-medium">S{selected}</span>
-        </p>
         {BOATS.map((boat) => {
           const s = boatState[boat.id]
           const locked = !!busy[boat.id]
+          const boatSector = selected[boat.id]
           return (
             <div key={boat.id} className="flex items-center gap-3">
               <span className="w-20 text-sm font-medium">{boat.label}</span>
+              {phase === PHASE.Commit && !s?.committed && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSelected((p) => ({ ...p, [boat.id]: (boatSector + GRID_SIZE - 1) % GRID_SIZE }))}
+                    className="rounded bg-slate-700 px-2 py-1 text-xs"
+                  >‹</button>
+                  <span className="w-8 text-center text-sm font-medium">S{boatSector}</span>
+                  <button
+                    onClick={() => setSelected((p) => ({ ...p, [boat.id]: (boatSector + 1) % GRID_SIZE }))}
+                    className="rounded bg-slate-700 px-2 py-1 text-xs"
+                  >›</button>
+                </div>
+              )}
               <button
                 onClick={() => onCommit(boat)}
                 disabled={!loaded || locked || phase !== PHASE.Commit || s?.committed || stake === null}
                 className="rounded bg-sky-600 px-3 py-1.5 text-sm font-medium disabled:bg-slate-700 disabled:text-slate-500"
               >
-                Commit S{selected}
+                Commit S{boatSector}
               </button>
               <button
                 onClick={() => onReveal(boat)}
