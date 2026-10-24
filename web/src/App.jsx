@@ -221,7 +221,10 @@ export default function App() {
       }),
     )
 
+  const committed = BOATS.filter((b) => boatState[b.id]?.committed)
   const revealed = BOATS.filter((b) => boatState[b.id]?.revealed)
+  const allCommittedBoatsRevealed =
+    committed.length === 0 || committed.every((b) => boatState[b.id]?.revealed)
   const allClaimedOrNoneRevealed =
     revealed.length === 0 || revealed.every((b) => boatState[b.id]?.claimed)
 
@@ -236,7 +239,7 @@ export default function App() {
         </p>
       </header>
 
-      {(phase === PHASE.None || phase === PHASE.Closed) && (
+      {loaded && (phase === PHASE.None || phase === PHASE.Closed) && (
         <button
           onClick={onCreateEpoch}
           disabled={!!busy.operator}
@@ -326,16 +329,28 @@ export default function App() {
           !!busy.operator ||
           phase === PHASE.None ||
           phase === PHASE.Closed ||
+          (phase === PHASE.Commit && committed.length < BOATS.length) ||
+          (phase === PHASE.Reveal && !allCommittedBoatsRevealed) ||
           (phase === PHASE.Claim && !allClaimedOrNoneRevealed)
         }
         title={
-          phase === PHASE.Claim && !allClaimedOrNoneRevealed
-            ? 'All revealed boats must claim before closing'
-            : undefined
+          phase === PHASE.Commit && committed.length < BOATS.length
+            ? `Waiting for all boats to commit (${committed.length}/${BOATS.length})`
+            : phase === PHASE.Reveal && !allCommittedBoatsRevealed
+              ? 'All committed boats must reveal first'
+              : phase === PHASE.Claim && !allClaimedOrNoneRevealed
+                ? 'All revealed boats must claim before closing'
+                : undefined
         }
         className="mb-6 w-full rounded bg-amber-600 px-4 py-3 text-lg font-semibold disabled:bg-slate-700 disabled:text-slate-500"
       >
-        Advance Phase{phase === PHASE.Claim && !allClaimedOrNoneRevealed ? ' (waiting for claims)' : ''}
+        {phase === PHASE.Commit && committed.length < BOATS.length
+          ? `Advance Phase (${committed.length}/${BOATS.length} committed)`
+          : phase === PHASE.Reveal && !allCommittedBoatsRevealed
+            ? 'Advance Phase (waiting for reveals)'
+            : phase === PHASE.Claim && !allClaimedOrNoneRevealed
+              ? 'Advance Phase (waiting for claims)'
+              : 'Advance Phase'}
       </button>
 
       <div className="rounded border border-slate-700 bg-slate-900 p-4 text-sm">
