@@ -56,8 +56,8 @@ export default function App() {
   const [bounties, setBounties] = useState(Array(GRID_SIZE).fill(0n))
   const [counts, setCounts] = useState(Array(GRID_SIZE).fill(0))
   const [stake, setStake] = useState(null)
-  // Per-boat sector selection so each can target a different sector independently.
-  const [selected, setSelected] = useState(() => Object.fromEntries(BOATS.map((b) => [b.id, 12])))
+  // Pre-spread defaults so it's obvious each boat has its own selector.
+  const [selected, setSelected] = useState(() => ({ A: 11, B: 12, C: 13 }))
   const [boatState, setBoatState] = useState({})
   const [busy, setBusy] = useState({})
   const [message, setMessage] = useState('')
@@ -298,12 +298,12 @@ export default function App() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setSelected((p) => ({ ...p, [boat.id]: (boatSector + GRID_SIZE - 1) % GRID_SIZE }))}
-                    className="rounded bg-slate-700 px-2 py-1 text-xs"
+                    className="rounded bg-slate-600 px-2 py-1 text-sm font-bold hover:bg-slate-500"
                   >‹</button>
-                  <span className="w-8 text-center text-sm font-medium">S{boatSector}</span>
+                  <span className="w-10 text-center text-sm font-bold text-sky-300">S{boatSector}</span>
                   <button
                     onClick={() => setSelected((p) => ({ ...p, [boat.id]: (boatSector + 1) % GRID_SIZE }))}
-                    className="rounded bg-slate-700 px-2 py-1 text-xs"
+                    className="rounded bg-slate-600 px-2 py-1 text-sm font-bold hover:bg-slate-500"
                   >›</button>
                 </div>
               )}
