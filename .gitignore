@@ -1,0 +1,13 @@
+# env files with private keys
+web/.env
+web/.env.local
+
+# forge artifacts (each covered by contracts/.gitignore too)
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+contracts/forge-std.zip
+
+# node
+web/node_modules/
+web/dist/
