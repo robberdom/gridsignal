@@ -19,8 +19,7 @@ contract Deploy is Script {
 
         bool local = block.chainid == 31337;
         // Scale factor: 1 ether on local, 0.001 ether on testnet.
-        uint256 u = local ? 1 ether : 0.001 ether;
-
+        uint256 u = local ? 1 ether : 0.000001 ether;
         // 5x5 grid layout (row-major, S0=top-left, S24=bottom-right):
         //   0.5  0.5  1.0  0.5  0.5
         //   0.5  1.5  2.0  1.5  0.5

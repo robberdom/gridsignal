@@ -1,6 +1,7 @@
 # env files with private keys
 web/.env
 web/.env.local
+contracts/.env
 
 # forge artifacts (each covered by contracts/.gitignore too)
 contracts/cache/

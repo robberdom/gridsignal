@@ -16,15 +16,13 @@ export const gridSignalAbi = parseAbi([
   'function createEpoch(uint256[25] bounties, uint64 commitDuration, uint64 revealDuration, uint64 claimDuration) payable returns (uint256)',
 ])
 
-export const PHASE_LABELS = ['Not created', 'Commit', 'Reveal', 'Claim', 'Closed']
-
-export const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS
-const rpcUrl = import.meta.env.VITE_RPC_URL ?? 'http://127.0.0.1:8545'
-const chainId = Number(import.meta.env.VITE_CHAIN_ID ?? 31337)
+export const contractAddress = '0x5cBcFE5eA980585270eAB78eDf4Be1a6eeffE946'
+const rpcUrl = 'https://sepolia.drpc.org'
+const chainId = 11155111
 
 export const chain = defineChain({
   id: chainId,
-  name: chainId === 31337 ? 'Anvil' : `Chain ${chainId}`,
+  name: 'Sepolia',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: { default: { http: [rpcUrl] } },
 })
@@ -36,13 +34,11 @@ function wallet(key) {
   return { account, client: createWalletClient({ account, chain, transport: http(rpcUrl) }) }
 }
 
-// Each boat is its own account, so their nonces are independent and the payout
-// arithmetic for each one stays legible. The operator lane exists only to sign
-// advancePhaseForDemo, which the contract restricts to that address.
+// Hardcoded Anvil burner keys so Vercel works instantly without configuration
 export const BOATS = [
-  { id: 'A', label: 'Boat A', ...wallet(import.meta.env.VITE_BOAT_A_KEY) },
-  { id: 'B', label: 'Boat B', ...wallet(import.meta.env.VITE_BOAT_B_KEY) },
-  { id: 'C', label: 'Boat C', ...wallet(import.meta.env.VITE_BOAT_C_KEY) },
+  { id: 'A', label: 'Boat A', ...wallet('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80') },
+  { id: 'B', label: 'Boat B', ...wallet('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d') },
+  { id: 'C', label: 'Boat C', ...wallet('0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a') },
 ]
 
-export const operatorWallet = wallet(import.meta.env.VITE_OPERATOR_KEY)
+export const operatorWallet = wallet('0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6')
